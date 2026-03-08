@@ -5,7 +5,7 @@
 #define PIN_NEOPIXEL 0
 #define BRIGHTNESS 16
 
-float current_percentage = 0;
+float current_percentage = 0; //float is heavy on mcu. need to change to int.
 float battery_percentage = 0;
 float speed = 0;
 
@@ -96,19 +96,18 @@ void setup() {
     matrix.setTextColor(colors[0]);
 }
 
-int number = 0;
 int number_units = 0;
 int number_dozens = 0;
 uint16_t color_bar = matrix.Color(0,0,0);
 
 void loop() {
-    number += 1;
-    battery_percentage += 10;
+    //speed += 1;
+    //battery_percentage += 10; for testing 
     if (battery_percentage>100) battery_percentage = 0;
-    if (number > 199) number = 0; //change to 199 to clamp it later on (bc display 99+ but whatever who would go 200+ on an ev)
+    if (speed > 199) speed = 0; //change to 199 to clamp it later on (bc display 99+ but whatever who would go 200+ on an ev)
     
-    number_dozens = number/10;
-    number_units = number % 10;
+    number_dozens = speed/10;
+    number_units = (int)speed % 10;
 
     if (battery_percentage < 40) {
         color_bar = matrix.Color(255,0,0);
@@ -119,14 +118,15 @@ void loop() {
     }
     
     matrix.fillScreen(0);
-    draw_digit(5,0,number_units,colors[1]);
-    if (number < 100) {
-        draw_digit(1,0,number_dozens,colors[1]);
+    draw_digit(5, 0, number_units, colors[1]);
+    if (speed < 100) {
+        draw_digit(1, 0, number_dozens, colors[1]);
     } else {
         number_dozens -= 10;
-        draw_digit(1,0,number_dozens,colors[0]);
+        draw_digit(1, 0, number_dozens, colors[0]);
     }
-    draw_bar(7,battery_percentage, color_bar);
+    draw_bar(7, battery_percentage, color_bar); //batt
+    draw_bar(6, current_percentage, colors[2]); //power
     matrix.setBrightness(BRIGHTNESS);
     matrix.show();
     delay(100);
