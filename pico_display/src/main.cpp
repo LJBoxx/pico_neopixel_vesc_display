@@ -12,6 +12,8 @@
 float current_percentage = 0; //float is heavy on mcu. need to change to int.
 float battery_percentage = 0;
 float speed = 0;
+int poles = 14;
+int diameter = 279;//279mm about 11inch 
 
 long unsigned int rxId;
 unsigned char len = 0;
@@ -156,11 +158,16 @@ void loop1() {
         int vesc_id = rxId & 0xFF; //b0-7 for vescid
         int command_id = (rxId>>8) & 0xFF; //b8-15 for command id
         if (command_id == 9) {
-            int32_t erpm = 0;
-            for (int i = 0; i < 4; i++) {
-                erpm = (erpm<<8) | rxBuf[i]; //packet b0-3 (4byte)
+            int32_t erpm = 0; //rpm
+            int32_t current = 0; //A scale 10
+            int32_t duty = 0; //percentage scale 1000
+            for (int i = 0; i < 8; i++) {
+                if (i < 4) erpm = (erpm<<8) | rxBuf[i]; //packet b0-3 (4byte)
+                if (i >= 4 && i < 6) current = (current<<8) | rxBuf[i];
+                if (i >= 6) duty = (duty<<8) | rxBuf[i];
             }
-            
+            speed = ((erpm / (poles/2)) * (314 * diameter)/10000) * 60;//speed in km/m(distance/time) = r/m * distance/r (and units conv)
+            //mayb a filter so its not too jumpy ? i mean polling rate can be changed and default @10hz iirc
         }
 
         /*
