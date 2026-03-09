@@ -13,7 +13,10 @@ float current_percentage = 0; //float is heavy on mcu. need to change to int.
 float battery_percentage = 0;
 float speed = 0;
 
-char msgString[128]; 
+long unsigned int rxId;
+unsigned char len = 0;
+unsigned char rxBuf[8];
+//char msgString[128]; //idontneed that lol
 
 MCP_CAN CAN(&SPI1, CAN_CS);
 
@@ -112,6 +115,7 @@ void setup1() {
     CAN.begin(MCP_ANY, CAN_250KBPS, MCP_8MHZ);
     CAN.setMode(MCP_NORMAL);
     pinMode(CAN_INT, INPUT);
+    //add query for config (idk how yet ;-;)
 }
 
 void loop() {
@@ -148,6 +152,17 @@ void loop() {
 
 void loop1() {
     if (!digitalRead(CAN_INT)) {
+        CAN.readMsgBuf(&rxId, &len, rxBuf);
+        int vesc_id = rxId & 0xFF; //b0-7 for vescid
+        int command_id = (rxId>>8) & 0xFF; //b8-15 for command id
+        if (command_id == 9) {
+            int32_t erpm = 0;
+            for (int i = 0; i < 4; i++) {
+                erpm = (erpm<<8) | rxBuf[i]; //packet b0-3 (4byte)
+            }
+            
+        }
+
         /*
         process frame looooooooooooong ass if/else check lol 
         also might need to make something to appaear on the canbus scan that would be cool!
