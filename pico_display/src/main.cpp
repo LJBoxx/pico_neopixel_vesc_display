@@ -1,13 +1,21 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
+#include <mcp_can.h>
+#include <SPI.h>
 
 #define PIN_NEOPIXEL 0
 #define BRIGHTNESS 16
+#define CAN_INT 9 //gp9 int mcp on hw spi1
+#define CAN_CS 13
 
 float current_percentage = 0; //float is heavy on mcu. need to change to int.
 float battery_percentage = 0;
 float speed = 0;
+
+char msgString[128]; 
+
+MCP_CAN CAN(&SPI1, CAN_CS);
 
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, PIN_NEOPIXEL,
   NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
@@ -100,6 +108,12 @@ int number_units = 0;
 int number_dozens = 0;
 uint16_t color_bar = matrix.Color(0,0,0);
 
+void setup1() {
+    CAN.begin(MCP_ANY, CAN_250KBPS, MCP_8MHZ);
+    CAN.setMode(MCP_NORMAL);
+    pinMode(CAN_INT, INPUT);
+}
+
 void loop() {
     //speed += 1;
     //battery_percentage += 10; for testing 
@@ -130,4 +144,14 @@ void loop() {
     matrix.setBrightness(BRIGHTNESS);
     matrix.show();
     delay(100);
+}
+
+void loop1() {
+    if (!digitalRead(CAN_INT)) {
+        /*
+        process frame looooooooooooong ass if/else check lol 
+        also might need to make something to appaear on the canbus scan that would be cool!
+        alt mode : uart canbus is broken on a lot of vesc devices, maybe fallback mode ?
+        */
+    }
 }
