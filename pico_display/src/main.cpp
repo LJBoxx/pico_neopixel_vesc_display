@@ -114,9 +114,13 @@ int number_dozens = 0;
 uint16_t color_bar = matrix.Color(0,0,0);
 
 void setup1() {
+    SPI1.setRX(12);
+    SPI1.setTX(11);
+    SPI1.setSCK(10);
+    SPI1.begin();
     CAN.begin(MCP_ANY, CAN_250KBPS, MCP_8MHZ);
     CAN.setMode(MCP_NORMAL);
-    pinMode(CAN_INT, INPUT);
+    pinMode(CAN_INT, INPUT_PULLUP);
     //add query for config (idk how yet ;-;)
 }
 
