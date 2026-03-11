@@ -12,8 +12,13 @@
 float current_percentage = 0; //float is heavy on mcu. need to change to int.
 float battery_percentage = 0;
 float speed = 0;
+float vbattmin = 30;
+float vbattmax = 42; //values for 10s batt (on bench test)
 int poles = 14;
 int diameter = 279;//279mm about 11inch 
+
+uint32_t T_MOS = 0;
+uint32_t T_MOT = 0;
 
 long unsigned int rxId;
 unsigned char len = 0;
@@ -161,7 +166,7 @@ void loop1() {
         CAN.readMsgBuf(&rxId, &len, rxBuf);
         int vesc_id = rxId & 0xFF; //b0-7 for vescid
         int command_id = (rxId>>8) & 0xFF; //b8-15 for command id
-        if (command_id == 9) {
+        if (command_id == 9) { //status 1
             int32_t erpm = 0; //rpm
             int32_t current = 0; //A scale 10
             int32_t duty = 0; //percentage scale 1000
@@ -173,7 +178,20 @@ void loop1() {
             speed = ((erpm / (poles/2)) * (314 * diameter)/10000) * 60;//speed in km/m(distance/time) = r/m * distance/r (and units conv)
             //mayb a filter so its not too jumpy ? i mean polling rate can be changed and default @10hz iirc
         }
-
+        if (command_id == 16) { //status 4
+            for (int i = 0; i < 8; i++) {
+                if (i < 2) T_MOS = (T_MOS<<8) | rxBuf[i];
+                if (i >= 2 && i <4) T_MOT = (T_MOT<<8) | rxBuf[i];
+            }
+        }
+        if (command_id == 27) { //status 5
+            int32_t voltage = 0;
+            for (int i = 0; i < 6; i++) {
+                if (i >= 3) voltage = (voltage<<8) | rxBuf[i];
+            }
+            battery_percentage = voltage-vbattmin/vbattmax-vbattmin;
+        }
+        
         /*
         process frame looooooooooooong ass if/else check lol 
         also might need to make something to appaear on the canbus scan that would be cool!
