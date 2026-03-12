@@ -172,22 +172,22 @@ void loop1() {
             int32_t duty = 0; //percentage scale 1000
             for (int i = 0; i < 8; i++) {
                 if (i < 4) erpm = (erpm<<8) | rxBuf[i]; //packet b0-3 (4byte)
-                if (i >= 4 && i < 6) current = (current<<8) | rxBuf[i];
-                if (i >= 6) duty = (duty<<8) | rxBuf[i];
+                if (i >= 4 && i < 6) current = (current<<8) | rxBuf[i] % 10;
+                if (i >= 6) duty = (duty<<8) | rxBuf[i] % 1000;
             }
             speed = ((erpm / (poles/2)) * (314 * diameter)/10000) * 60;//speed in km/m(distance/time) = r/m * distance/r (and units conv)
             //mayb a filter so its not too jumpy ? i mean polling rate can be changed and default @10hz iirc
         }
         if (command_id == 16) { //status 4
             for (int i = 0; i < 8; i++) {
-                if (i < 2) T_MOS = (T_MOS<<8) | rxBuf[i];
-                if (i >= 2 && i <4) T_MOT = (T_MOT<<8) | rxBuf[i];
+                if (i < 2) T_MOS = ((T_MOS<<8) | rxBuf[i]) % 10;
+                if (i >= 2 && i <4) T_MOT = ((T_MOT<<8) | rxBuf[i]) % 10;
             }
         }
         if (command_id == 27) { //status 5
             int32_t voltage = 0;
             for (int i = 0; i < 6; i++) {
-                if (i >= 3) voltage = (voltage<<8) | rxBuf[i];
+                if (i >= 3) (voltage = (voltage<<8) | rxBuf[i]) % 10; //scale 10
             }
             battery_percentage = voltage-vbattmin/vbattmax-vbattmin;
         }
