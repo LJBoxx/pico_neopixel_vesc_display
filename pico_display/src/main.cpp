@@ -8,6 +8,10 @@
 #define BRIGHTNESS 16
 #define CAN_INT 9 //gp9 int mcp on hw spi1
 #define CAN_CS 13
+#define BTN_POWER 2
+#define BTN_SELECT 3
+#define BTN_UP 4
+#define BTN_DOWN 5
 
 float current_percentage = 0; //float is heavy on mcu. need to change to int.
 float battery_percentage = 0;
@@ -126,6 +130,11 @@ void setup1() {
     CAN.begin(MCP_ANY, CAN_250KBPS, MCP_8MHZ);
     CAN.setMode(MCP_NORMAL);
     pinMode(CAN_INT, INPUT_PULLUP);
+    pinMode(BTN_POWER, INPUT_PULLUP);
+    pinMode(BTN_SELECT, INPUT_PULLUP);
+    pinMode(BTN_UP, INPUT_PULLUP);
+    pinMode(BTN_DOWN, INPUT_PULLUP);
+    
     //add query for config (idk how yet ;-;)
 }
 
@@ -172,24 +181,29 @@ void loop1() {
             int32_t duty = 0; //percentage scale 1000
             for (int i = 0; i < 8; i++) {
                 if (i < 4) erpm = (erpm<<8) | rxBuf[i]; //packet b0-3 (4byte)
-                if (i >= 4 && i < 6) current = (current<<8) | rxBuf[i] % 10;
-                if (i >= 6) duty = (duty<<8) | rxBuf[i] % 1000;
+                if (i >= 4 && i < 6) current = (current<<8) | rxBuf[i];
+                if (i >= 6) duty = (duty<<8) | rxBuf[i];
             }
+            if (duty != 0) duty /= 1000;
+            if (current != 0) current /= 10;
             speed = ((erpm / (poles/2)) * (314 * diameter)/10000) * 60;//speed in km/m(distance/time) = r/m * distance/r (and units conv)
             //mayb a filter so its not too jumpy ? i mean polling rate can be changed and default @10hz iirc
         }
         if (command_id == 16) { //status 4
             for (int i = 0; i < 8; i++) {
-                if (i < 2) T_MOS = ((T_MOS<<8) | rxBuf[i]) % 10;
-                if (i >= 2 && i <4) T_MOT = ((T_MOT<<8) | rxBuf[i]) % 10;
+                if (i < 2) T_MOS = ((T_MOS<<8) | rxBuf[i]);
+                if (i >= 2 && i <4) T_MOT = ((T_MOT<<8) | rxBuf[i]);
             }
+            if (T_MOS!=0) T_MOS /= 10;
+            if (T_MOT!=0) T_MOT /= 10;
         }
         if (command_id == 27) { //status 5
             int32_t voltage = 0;
             for (int i = 0; i < 6; i++) {
-                if (i >= 3) (voltage = (voltage<<8) | rxBuf[i]) % 10; //scale 10
+                if (i >= 3) voltage = (voltage<<8) | rxBuf[i]; 
             }
-            battery_percentage = voltage-vbattmin/vbattmax-vbattmin;
+            voltage /= 10; //scale 10
+            battery_percentage = (voltage-vbattmin)/(vbattmax-vbattmin);
         }
         
         /*
@@ -197,5 +211,20 @@ void loop1() {
         also might need to make something to appaear on the canbus scan that would be cool!
         alt mode : uart canbus is broken on a lot of vesc devices, maybe fallback mode ?
         */
+    }
+    if (!digitalRead(BTN_POWER)) {
+        //send shutdown command
+    }
+    if (!digitalRead(BTN_SELECT)) {
+        //idk man
+    }
+    if (!digitalRead(BTN_UP)) {
+        //idfk
+    }
+    if (!digitalRead(BTN_DOWN)) {
+        //same
+    }
+    if (!digitalRead(BTN_DOWN) && !digitalRead(BTN_UP)) {
+        //speedlimiter logic here :p
     }
 }
