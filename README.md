@@ -21,6 +21,15 @@ Vesc2 UART :
 - p4(tx) to vesc rx 
 - p5(rx) to vesc tx
 
+# How to install 
+
+First setup platformio with vscode, clone this repo : 
+```
+git clone https://github.com/LJBoxx/pico_neopixel_vesc_display.git
+```
+Then open /pico_display on platformio and crtl+alt+b or press build !
+After that you simply have to drag and drop the .uf2 into your pico and all set !
+
 # Demo !
 
 ## Batt
